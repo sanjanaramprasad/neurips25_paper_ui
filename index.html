@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factuality Metrics Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: #ffffff;
+            color: #111827;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #111827;
+        }
+
+        header p {
+            font-size: 1.25rem;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+
+        .paper-badge {
+            font-size: 0.875rem;
+            color: #9ca3af;
+            margin-bottom: 1.5rem;
+        }
+
+        .header-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            padding: 0.625rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-secondary {
+            background: #1f2937;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: #111827;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            padding: 0.5rem;
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.25rem;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: #e5e7eb;
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .section-tabs {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+            background: #f3f4f6;
+            color: #374151;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+            transform: scale(1.05);
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #e5e7eb;
+        }
+
+        .visualization {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .viz-title {
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #111827;
+        }
+
+        .viz-description {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 2rem;
+            font-size: 1.125rem;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            padding: 0.625rem 1.25rem;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+
+        .control-btn.secondary {
+            background: #6b7280;
+        }
+
+        .control-btn.secondary:hover {
+            background: #4b5563;
+        }
+
+        /* Document and Summary Cards */
+        .doc-card {
+            background: #eff6ff;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 2px solid #bfdbfe;
+            margin: 1rem 0;
+            transition: all 0.5s;
+        }
+
+        .doc-card h3 {
+            color: #1e40af;
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .doc-card p {
+            color: #1f2937;
+            line-height: 1.7;
+        }
+
+        .summary-grid {
+            display: grid;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 2px solid #d1d5db;
+            transition: all 0.5s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .summary-card.correct {
+            border-color: #86efac;
+        }
+
+        .summary-card.incorrect {
+            border-color: #fca5a5;
+        }
+
+        .summary-card.manipulated {
+            border-color: #fdba74;
+        }
+
+        .summary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-label {
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .summary-label.correct { color: #16a34a; }
+        .summary-label.incorrect { color: #dc2626; }
+        .summary-label.manipulated { color: #ea580c; }
+
+        .score-badge {
+            padding: 0.375rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .score-badge.high {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .score-badge.low {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .score-badge.boost {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Metric Bars */
+        .metric-chart {
+            margin: 2rem 0;
+        }
+
+        .metric-bar-container {
+            margin: 1rem 0;
+        }
+
+        .metric-label-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .bar-track {
+            background: #e5e7eb;
+            height: 2.5rem;
+            border-radius: 9999px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #2563eb);
+            border-radius: 9999px;
+            transition: width 1s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0 1rem;
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        /* Difficulty Cards */
+        .difficulty-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .difficulty-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border-top: 4px solid;
+            transition: all 0.3s;
+        }
+
+        .difficulty-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .difficulty-card.easy { border-top-color: #22c55e; }
+        .difficulty-card.medium { border-top-color: #f59e0b; }
+        .difficulty-card.hard { border-top-color: #ef4444; }
+
+        .difficulty-icon {
+            font-size: 3rem;
+            margin: 1rem 0;
+        }
+
+        /* Gaming Comparison */
+        .gaming-comparison {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .comparison-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border-left: 5px solid;
+        }
+
+        .comparison-card.original {
+            border-left-color: #3b82f6;
+        }
+
+        .comparison-card.gamed {
+            border-left-color: #ef4444;
+        }
+
+        .highlight {
+            background: #fef08a;
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+        }
+
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            margin: 2rem 0;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .data-table th {
+            background: #2563eb;
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .data-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .data-table tr:hover {
+            background: #f9fafb;
+        }
+
+        /* Pipeline Flow */
+        .pipeline-flow {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 2rem 0;
+            position: relative;
+        }
+
+        .pipeline-stage {
+            flex: 1;
+            max-width: 200px;
+            transition: all 0.5s;
+        }
+
+        .stage-card {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            text-align: center;
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            border: 2px solid transparent;
+            transition: all 0.5s;
+        }
+
+        .stage-card.active {
+            border-color: #1f2937;
+            transform: scale(1.05);
+        }
+
+        .stage-card.inactive {
+            opacity: 0.3;
+            transform: scale(0.95);
+        }
+
+        .stage-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .stage-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stage-desc {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        .pipeline-arrow {
+            flex-shrink: 0;
+            margin: 0 0.5rem;
+            font-size: 2rem;
+            color: #3b82f6;
+            transition: all 0.5s;
+        }
+
+        .pipeline-arrow.inactive {
+            color: #d1d5db;
+            opacity: 0.3;
+        }
+
+        /* Vulnerability Analysis */
+        .vuln-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .vuln-card {
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 2px solid;
+            transition: all 0.5s;
+        }
+
+        .vuln-card.qa {
+            border-color: #fbbf24;
+            background: #fffbeb;
+        }
+
+        .vuln-card.nli {
+            border-color: #fb923c;
+            background: #fff7ed;
+        }
+
+        .vuln-card.specialized {
+            border-color: #a855f7;
+            background: #faf5ff;
+        }
+
+        .vuln-card.llm {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .vuln-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: #1f2937;
+        }
+
+        .vuln-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .vuln-list li {
+            display: flex;
+            align-items: start;
+            gap: 0.5rem;
+            margin: 0.5rem 0;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+
+        /* Recommendations Box */
+        .recommendations {
+            background: #eff6ff;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 2px solid #bfdbfe;
+            margin: 2rem 0;
+        }
+
+        .recommendations h3 {
+            color: #1e40af;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .rec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .rec-section h4 {
+            color: #2563eb;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .rec-section ul {
+            margin-left: 1rem;
+            color: #1f2937;
+            font-size: 0.875rem;
+        }
+
+        .rec-section li {
+            margin: 0.25rem 0;
+        }
+
+        /* Key Takeaways */
+        .takeaways-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .takeaway-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border-left: 5px solid;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .takeaway-card.robust { border-left-color: #22c55e; }
+        .takeaway-card.vulnerable { border-left-color: #f59e0b; }
+        .takeaway-card.recommendation { border-left-color: #3b82f6; }
+
+        .takeaway-card h3 {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: #111827;
+        }
+
+        /* Animation Classes */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .animate-in {
+            animation: slideIn 0.5s ease-out forwards;
+        }
+
+        .pulse-once {
+            animation: pulse 0.5s ease-out;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        /* Grouped Bar Chart */
+        .grouped-bar-chart {
+            min-width: 900px;
+            width: 100%;
+            padding: 2rem 1rem;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            gap: 2rem;
+            height: 400px;
+            border-bottom: 2px solid #e5e7eb;
+            position: relative;
+        }
+
+        .metric-group {
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.5s ease-out;
+        }
+
+        .metric-group.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .bars-container {
+            display: flex;
+            gap: 4px;
+            align-items: flex-end;
+            height: 300px;
+            margin-bottom: 1rem;
+        }
+
+        .bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            height: 100%;
+        }
+
+        .bar {
+            width: 35px;
+            background: var(--bar-color);
+            border-radius: 4px 4px 0 0;
+            transition: height 0.8s ease-out;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 0.5rem;
+            color: white;
+            font-weight: 600;
+            font-size: 0.75rem;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .bar.easy {
+            --bar-color: #10b981;
+        }
+
+        .bar.medium {
+            --bar-color: #eab308;
+        }
+
+        .bar.hard {
+            --bar-color: #ef4444;
+        }
+
+        .metric-name {
+            font-weight: 600;
+            color: #374151;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            text-align: center;
+        }
+
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+            padding: 1rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        /* Y-axis labels */
+        .y-axis {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 60px;
+            width: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        .y-axis-label {
+            text-align: right;
+            padding-right: 0.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .visualization {
+                padding: 1.5rem;
+            }
+
+            .pipeline-flow {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .pipeline-arrow {
+                transform: rotate(90deg);
+            }
+        }
+
+        /* Hide inactive sections */
+        .section-content {
+            display: none;
+        }
+
+        .section-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Factuality Metrics Analysis</h1>
+            <p>Do Automatic Factuality Metrics Measure Factuality?</p>
+            <div class="paper-badge">NeurIPS 2025</div>
+            
+            <div class="header-links">
+                <a href="https://arxiv.org/abs/2411.16638" target="_blank" class="btn btn-primary">
+                    📄 Read Paper
+                </a>
+                <a href="https://github.com/sanjanaramprasad/do_automatic_factuality_metrics_measure_factuality.git" target="_blank" class="btn btn-secondary">
+                    💻 View Code
+                </a>
+            </div>
+        </header>
+
+        <!-- Section Navigation -->
+        <div class="section-nav">
+            <button class="nav-btn" onclick="navigateSection(-1)" id="prev-btn">◀</button>
+            
+            <div class="section-tabs">
+                <button class="tab-btn active" onclick="showSection(0)">1. Introduction</button>
+                <button class="tab-btn" onclick="showSection(1)">2. Metric Complexity</button>
+                <button class="tab-btn" onclick="showSection(2)">3. Gaming</button>
+                <button class="tab-btn" onclick="showSection(3)">4. GPT Parametric Bias</button>
+                <button class="tab-btn" onclick="showSection(4)">5. Metric Sensitivity</button>
+                <button class="tab-btn" onclick="showSection(5)">6. Practical Recommendations</button>
+            </div>
+
+            <button class="nav-btn" onclick="navigateSection(1)" id="next-btn">▶</button>
+        </div>
+
+        <!-- Section 1: Core Problem -->
+        <div class="section-content active" id="section-0">
+            <div class="visualization">
+                <h2 class="viz-title">Introduction</h2>
+                <p class="viz-description">
+                  Many methods have been proposed to automatically evaluate the factual consistency of
+                  summaries with respect to inputs. In this work we critically evaluate such approaches, e.g., by
+                  measuring their sensitivity to various manipulations, as shown here
+                </p>
+
+                <!-- <div class="controls">
+                    <button class="control-btn" onclick="playCoreProblem()">▶ Play Animation</button>
+                    <button class="control-btn secondary" onclick="resetCoreProblem()">↺ Reset</button>
+                </div> -->
+
+                <div id="core-problem-content"></div>
+            </div>
+        </div>
+
+        <!-- Section 2: Easy vs Hard Examples -->
+        <div class="section-content" id="section-1">
+            <div class="visualization">
+                <h2 class="viz-title">Performance Degradation: Easy → Hard Examples</h2>
+                <p class="viz-description">
+                    All metrics show substantial performance drops on hard examples, suggesting reliance on superficial cues.
+                </p>
+
+                <!-- <div class="controls">
+                    <button class="control-btn" onclick="playDifficultyAnimation()">▶ Play Animation</button>
+                    <button class="control-btn secondary" onclick="resetDifficultyChart()">↺ Reset</button>
+                </div> -->
+
+                <div class="difficulty-grid">
+                    <div class="difficulty-card easy">
+                        <h3>Easy Examples</h3>
+                        <p style="font-size: 0.875rem; color: #374151;">High confidence correct predictions from shallow model (indicating shallow features suffice for classification)</p>
+                    </div>
+                    <div class="difficulty-card medium">
+                        <h3>Medium Examples</h3>
+                        <p style="font-size: 0.875rem; color: #374151;">Low confidence predictions from shallow model</p>
+                    </div>
+                    <div class="difficulty-card hard">
+                        <h3>Hard Examples</h3>
+                        <p style="font-size: 0.875rem; color: #374151;">High confidence inorrect predictions from shallow model (indicating examples require deeper reasoning)</p>
+                    </div>
+                </div>
+
+                <div style="background: #f9fafb; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb; margin: 2rem 0; overflow-x: auto;">
+                    <div id="grouped-bar-chart"></div>
+                </div>
+
+                <div class="recommendations" style="background: #fef2f2; border-color: #fecaca;">
+                    <h3 style="color: #991b1b;">⚠️ Critical Finding</h3>
+                    <p style="color: #1f2937;">
+                        All metrics show <strong style="color: #dc2626;">substantial performance drops</strong> on hard examples,
+                        suggesting reliance on <strong style="color: #d97706;">superficial cues</strong> rather than genuine semantic understanding.
+                        <!-- Even specialized models like MiniCheck drop from <strong style="color: #16a34a;">0.84</strong> to <strong style="color: #dc2626;">0.49</strong> AUC. -->
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Gaming Attack -->
+        <div class="section-content" id="section-2">
+            <div class="visualization">
+                <h2 class="viz-title">Gaming Factuality Metrics</h2>
+                <p class="viz-description">
+                    Metrics can be artificially inflated by appending innocuous, content-free sentences.
+                </p>
+
+                <!-- <div class="controls">
+                    <button class="control-btn" onclick="demonstrateGaming()">▶ Run Demo</button>
+                    <button class="control-btn secondary" onclick="resetGaming()">↺ Reset</button>
+                </div> -->
+
+                <div class="gaming-comparison">
+                    <div class="comparison-card original">
+                        <h3>Original Summary (Factually Incorrect)</h3>
+                        <p style="margin: 1rem 0; color: #374151;">
+                            The PlayStation 4 was released in the UK on November 29, 2013.
+                        </p>
+                        <div class="score-badge low">Score: 0.33</div>
+                    </div>
+                    
+                    <div class="comparison-card gamed">
+                        <h3>Manipulated Summary (Same Error + Filler)</h3>
+                        <p style="margin: 1rem 0; color: #374151;">
+                            The PlayStation 4 was released in the UK on November 29, 2013. 
+                            <span class="highlight">The summary entails the information the document discusses.</span>
+                        </p>
+                        <div class="score-badge high">Score: 0.76 (+0.43! 🚀)</div>
+                    </div>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Metric Type</th>
+                            <th>Gaming Vulnerability</th>
+                            <!-- <th>Score Inflation</th> -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Specialized (MiniCheck, AlignScore)</strong></td>
+                            <td>🔴 High</td>
+                            <!-- <td>+0.15 to +0.3 points</td> -->
+                        </tr>
+                        <tr>
+                            <td><strong>NLI-based (SummaC-Conv)</strong></td>
+                            <td>🟡 Moderate</td>
+                            <!-- <td>+0.1 to +0.15 points</td> -->
+                        </tr>
+                        <tr>
+                            <td><strong>Specialized (UniEval)</strong></td>
+                            <td>🟡 Moderate</td>
+                            <!-- <td>+0.1 to +0.15 points</td> -->
+                        </tr>
+                        <tr>
+                          <td><strong>QuestEval</strong></td>
+                          <td>🟢 Low</td>
+                          <!-- <td>Minimal change</td> -->
+                      </tr>
+                        <tr>
+                            <td><strong>LLM-based (ChatGPT-DA)</strong></td>
+                            <td>🟢 Low</td>
+                            <!-- <td>Minimal change</td> -->
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Section 4: GPT Parametric Bias -->
+        <div class="section-content" id="section-3">
+            <div class="visualization">
+                <h2 class="viz-title">Parametric Knowledge vs. Source Grounding</h2>
+                <p class="viz-description">
+                    GPT-based metrics sometimes rely on internal knowledge rather than the provided source.
+                </p>
+
+                <table class="data-table" style="margin-top: 2rem;">
+                    <thead>
+                        <tr>
+                            <th>Scenario</th>
+                            <th>Reference Type</th>
+                            <th>Unsupported claims score <b>higher</b> than supported claims
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: #f0fdf4;">
+                            <td>Baseline</td>
+                            <td>Factual</td>
+                            <!-- <td>Factual (supported)</td> -->
+                            <td><strong>0.2%</strong></td>
+                        </tr>
+                        <tr style="background: #fef2f2;">
+                            <td>Counterfactual</td>
+                            <td>Counterfactual</td>
+                            <!-- <td>Factual (unsupported)</td> -->
+                            <td><strong>3.1%</strong> (12× increase ⚠️)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="recommendations">
+                    <h3>⚠️ Key Insight</h3>
+                    <p>
+                        When references contradict GPT's internal knowledge, it struggles to distinguish between 
+                        supported and unsupported summaries. This indicates reduced grounding in the provided source, 
+                        which could compromise reliability in scenarios involving myths, misinformation, or 
+                        information that conflicts with the model's training data.
+                    </p>
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <h3 style="font-weight: 700; margin-bottom: 1rem;">Score Difference (Supported - Unsupported)</h3>
+                    <div id="gpt-bias-chart"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 5: Metric Sensitivity -->
+        <div class="section-content" id="section-4">
+            <div class="visualization">
+                <h2 class="viz-title">Sensitivity to Factual vs. Benign Edits</h2>
+                <p class="viz-description">
+                    Many metrics are more sensitive to benign edits (paraphrasing) than to actual factual corrections.
+                </p>
+
+                <div class="controls">
+                    <button class="control-btn" onclick="showSensitivity('corrections')">Factual Corrections</button>
+                    <button class="control-btn" onclick="showSensitivity('benign')">Benign Edits</button>
+                    <button class="control-btn secondary" onclick="showSensitivity('both')">Compare Both</button>
+                </div>
+
+                <div id="sensitivity-chart"></div>
+            </div>
+        </div>
+
+        <!-- Section 6: Evaluation Pipeline -->
+        <div class="section-content" id="section-5">
+            <div class="visualization">
+                <!-- <h2 class="viz-title">Factuality Evaluation Pipeline</h2>
+                <p class="viz-description">
+                    Understanding the flow and vulnerabilities at each stage of factuality evaluation.
+                </p>
+
+                <div class="controls">
+                    <button class="control-btn" onclick="playPipelineAnimation()">▶ Play Animation</button>
+                    <button class="control-btn secondary" onclick="resetPipeline()">↺ Reset</button>
+                </div>
+
+                <div class="pipeline-flow" id="pipeline-stages"></div> -->
+
+                <div id="vulnerability-section"></div>
+
+                <div class="recommendations">
+                    <h3>✅ Recommendations</h3>
+                    <div class="rec-grid">
+                        <div class="rec-section">
+                            <h4>For Benchmark Design:</h4>
+                            <ul>
+                                <li>Include hard examples that require deeper reasoning</li>
+                                <li>Add graded variants showing error severity</li>
+                                <li>Include myths, misinformation or other tests for counterfactual references</li>
+                            </ul>
+                        </div>
+                        <div class="rec-section">
+                            <h4>For Metric Development:</h4>
+                            <ul>
+                                <li>Incorporate saliency-aware supervision</li>
+                                <li>Test for reliance on superficial features</li>
+                                <li>Test robustness against manipulation</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Takeaways (Always visible at bottom) -->
+        <div style="margin-top: 3rem;">
+            <div class="visualization">
+                <h2 class="viz-title">Key Takeaways</h2>
+                <div class="takeaways-grid">
+                    <div class="takeaway-card robust">
+                        <h3>✅ Most Robust</h3>
+                        <p>
+                            <strong>ChatGPT-DA</strong> shows greatest resistance to gaming and benign edits, 
+                            but may over-rely on parametric knowledge instead of reference document when evaluating for factuality.
+                        </p>
+                    </div>
+                    <div class="takeaway-card vulnerable">
+                        <h3>⚠️ Vulnerable</h3>
+                        <p>
+                            <strong>NLI and specialized models</strong> are susceptible to gaming and show 
+                            high sensitivity to benign edits. Score inflation can exceed improvements from 
+                            better models.
+                        </p>
+                    </div>
+                    <div class="takeaway-card recommendation">
+                        <h3>📈 Future Directions</h3>
+                        <p>
+                          Benchmarks and metrics should incorporate <strong>graded severity</strong>,
+                          <strong>saliency-aware scoring</strong>, and explicit tests of <strong>source grounding</strong>,
+                          with an emphasis on challenging cases that demand nuanced reasoning.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentSection = 0;
+        const totalSections = 6;
+
+        // Section navigation
+        function showSection(index) {
+            currentSection = index;
+            
+            // Hide all sections
+            document.querySelectorAll('.section-content').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(`section-${index}`).classList.add('active');
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+                if (i === index) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // Update nav buttons
+            document.getElementById('prev-btn').disabled = index === 0;
+            document.getElementById('next-btn').disabled = index === totalSections - 1;
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function navigateSection(direction) {
+            const newIndex = currentSection + direction;
+            if (newIndex >= 0 && newIndex < totalSections) {
+                showSection(newIndex);
+            }
+        }
+
+        // Data
+        const metricsData = {
+            easy: {
+                'QuestEval (QA)': 0.61,
+                'SummaC-Conv (NLI)': 0.66,
+                'UniEval (Specialized)': 0.73,
+                'MiniCheck (Specialized)': 0.84,
+                'AlignScore (Specialized)': 0.85,
+                'ChatGPT-DA (Prompt)': 0.75
+            },
+            medium: {
+                'QuestEval (QA)': 0.54,
+                'SummaC-Conv (NLI)': 0.56,
+                'UniEval (Specialized)': 0.64,
+                'MiniCheck (Specialized)': 0.68,
+                'AlignScore (Specialized)': 0.73,
+                'ChatGPT-DA (Prompt)': 0.66
+            },
+            hard: {
+                'QuestEval (QA)': 0.47,
+                'SummaC-Conv (NLI)': 0.48,
+                'UniEval (Specialized)': 0.59,
+                'MiniCheck (Specialized)': 0.49,
+                'AlignScore (Specialized)': 0.57,
+                'ChatGPT-DA (Prompt)': 0.57
+            }
+        };
+
+        // Section 1: Core Problem Animation
+        let coreProblemStep = 0;
+
+        function playCoreProblem() {
+            const container = document.getElementById('core-problem-content');
+            coreProblemStep = 0;
+            container.innerHTML = '';
+            
+            setTimeout(() => {
+                container.innerHTML = `
+                    <div class="doc-card animate-in">
+                        <h3>📄 Input Document</h3>
+                        <p>
+                            Sudan's military launched a major operation in Khartoum on 
+                            <span class="highlight">Thursday</span>, a senior Sudanese official said... 
+                            just before army chief and de facto leader, Gen. Abdel Fattah al-Burhan, 
+                            addressed the United Nations in New York...
+                        </p>
+                    </div>
+                `;
+            }, 100);
+            
+            setTimeout(() => {
+                container.innerHTML += `
+                    <h3 style="margin: 2rem 0 1rem; font-weight: 700; color: #374151;">🤖 Generated Summaries</h3>
+                    <div class="summary-grid">
+                        <div class="summary-card correct animate-in">
+                            <div class="summary-header">
+                                <span class="summary-label correct">Claim 1</span>
+                                <span class="score-badge high">Score: 0.9</span>
+                            </div>
+                            <p>Sudan's army attempting to re-take capitol...</p>
+                        </div>
+                        <div class="summary-card correct animate-in" style="animation-delay: 0.15s;">
+                            <div class="summary-header">
+                                <span class="summary-label manipulated">Claim 2</span>
+                                <span class="score-badge high">Score: 0.7</span>
+                            </div>
+                            <p>Fattah al-Burhan, leader of Sudan...</p>
+                        </div>
+                        <div class="summary-card incorrect animate-in" style="animation-delay: 0.3s;">
+                            <div class="summary-header">
+                                <span class="summary-label incorrect">Claim 3</span>
+                                <span class="score-badge low">Score: 0.4</span>
+                            </div>
+                            <p>Sudan's military re-took the capitol on <span class="highlight">Wednesday</span>...</p>
+                        </div>
+                    </div>
+                `;
+            }, 1500);
+            
+            setTimeout(() => {
+                container.innerHTML += `
+                    <h3 style="margin: 2rem 0 1rem; font-weight: 700; color: #374151;">⚠️ Modified Summaries</h3>
+                    <div class="summary-grid">
+                      <div class="summary-card manipulated animate-in" style="animation-delay: 0.3s;">
+                            <div class="summary-header">
+                                <span class="summary-label correct">Claim 1 (Rephrased)</span>
+                                <span class="score-badge boost">-0.1</span>
+                            </div>
+                            <p>Sudan's army is <span class="highlight">making an effort to regain control</span>...</p>
+                        </div>
+                        <div class="summary-card manipulated animate-in" style="animation-delay: 0.15s;">
+                            <div class="summary-header">
+                                <span class="summary-label manipulated">Claim 2 (Corrected)</span>
+                                <span class="score-badge boost">+0.0 (no change)</span>
+                            </div>
+                            <p>Fattah al-Burhan, <span class="highlight">de facto</span> leader of Sudan...</p>
+                        </div>
+                        <div class="summary-card manipulated animate-in">
+                            <div class="summary-header">
+                                <span class="summary-label incorrect">Claim 3 (Adversarial Prefix)</span>
+                                <span class="score-badge boost">+0.5 (increase!)</span>
+                            </div>
+                            <p><span class="highlight">According to the document</span> Sudan's military...</p>
+                        </div>
+                        
+                        
+                    </div>
+                `;
+            }, 3000);
+        }
+
+        function resetCoreProblem() {
+            document.getElementById('core-problem-content').innerHTML = '';
+        }
+
+        // Section 2: Grouped Bar Chart for Difficulty Levels
+        const difficultyData = [
+            { metric: 'QuestEval', easy: 0.61, medium: 0.54, hard: 0.47 },
+            { metric: 'SummaC', easy: 0.66, medium: 0.56, hard: 0.48 },
+            { metric: 'UniEval', easy: 0.73, medium: 0.64, hard: 0.59 },
+            { metric: 'MiniCheck', easy: 0.84, medium: 0.68, hard: 0.49 },
+            { metric: 'AlignScore', easy: 0.85, medium: 0.73, hard: 0.57 },
+            { metric: 'ChatGPT-DA', easy: 0.75, medium: 0.66, hard: 0.57 }
+        ];
+
+        let visibleMetrics = 0;
+
+        function renderGroupedBarChart() {
+            const container = document.getElementById('grouped-bar-chart');
+            if (!container) return;
+            
+            let html = '<div class="grouped-bar-chart" style="padding-left: 50px;">';
+            
+            difficultyData.forEach((data, idx) => {
+                const maxScore = 1.0;
+                // Heights as percentages of the 300px container
+                const easyHeight = (data.easy / maxScore) * 300;
+                const mediumHeight = (data.medium / maxScore) * 300;
+                const hardHeight = (data.hard / maxScore) * 300;
+                
+                html += `
+                    <div class="metric-group" id="metric-${idx}">
+                        <div class="bars-container">
+                            <div class="bar-wrapper">
+                                <div class="bar easy" style="height: ${easyHeight}px;">
+                                    ${data.easy.toFixed(2)}
+                                </div>
+                            </div>
+                            <div class="bar-wrapper">
+                                <div class="bar medium" style="height: ${mediumHeight}px;">
+                                    ${data.medium.toFixed(2)}
+                                </div>
+                            </div>
+                            <div class="bar-wrapper">
+                                <div class="bar hard" style="height: ${hardHeight}px;">
+                                    ${data.hard.toFixed(2)}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="metric-name">${data.metric}</div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            
+            // Add legend
+            html += `
+                <div class="chart-legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #10b981;"></div>
+                        <span>Easy</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #eab308;"></div>
+                        <span>Medium</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ef4444;"></div>
+                        <span>Hard</span>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        async function playDifficultyAnimation() {
+            // Reset
+            visibleMetrics = 0;
+            renderGroupedBarChart();
+            
+            // Animate each metric appearing
+            for (let i = 0; i < difficultyData.length; i++) {
+                await new Promise(resolve => setTimeout(resolve, 400));
+                const metricGroup = document.getElementById(`metric-${i}`);
+                if (metricGroup) {
+                    metricGroup.classList.add('visible');
+                }
+            }
+        }
+
+        function resetDifficultyChart() {
+            visibleMetrics = 0;
+            renderGroupedBarChart();
+        }
+
+        // Section 3: Gaming Demo
+        function demonstrateGaming() {
+            const cards = document.querySelectorAll('.comparison-card');
+            cards[0].classList.add('pulse-once');
+            setTimeout(() => {
+                cards[1].classList.add('pulse-once');
+            }, 300);
+            
+            setTimeout(() => {
+                cards.forEach(card => card.classList.remove('pulse-once'));
+            }, 1000);
+        }
+
+        function resetGaming() {
+            document.querySelectorAll('.comparison-card').forEach(card => {
+                card.classList.remove('pulse-once');
+            });
+        }
+
+        // Section 4: GPT Bias Chart
+        function renderGPTBiasChart() {
+            const container = document.getElementById('gpt-bias-chart');
+            if (!container) return;
+            
+            container.innerHTML = `
+                <div class="metric-bar-container">
+                    <div class="metric-label-row">
+                        <span>Factual References</span>
+                        <span>37.29 points</span>
+                    </div>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: 80%; background: linear-gradient(90deg, #22c55e, #16a34a);">
+                            Large gap (good)
+                        </div>
+                    </div>
+                </div>
+                <div class="metric-bar-container">
+                    <div class="metric-label-row">
+                        <span>Counterfactual References</span>
+                        <span>26.90 points</span>
+                    </div>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: 58%; background: linear-gradient(90deg, #ef4444, #dc2626);">
+                            Smaller gap (problematic)
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Section 5: Sensitivity Analysis
+        const sensitivityData = {
+          benign: {
+                'QuestEval': 0.017,
+                'SummaC-Conv': 0.127,
+                'UniEval': 0.027,
+                'AlignScore': 0.063,
+                'MiniCheck': 0.04,
+                'ChatGPT-DA': -0.003
+            },
+
+          corrections: {
+                          'QuestEval': 0.005,
+                          'SummaC-Conv': 0.017,
+                          'UniEval': 0.021,
+                          'AlignScore': 0.085,
+                          'MiniCheck': 0.1,
+                          'ChatGPT-DA': 0.088
+                      }
+        };
+
+        function showSensitivity(type) {
+            const container = document.getElementById('sensitivity-chart');
+            
+            if (type === 'both') {
+                container.innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                        <div>${renderSensitivityBars('corrections', 'Factual Corrections', '#22c55e')}</div>
+                        <div>${renderSensitivityBars('benign', 'Benign Edits', '#f59e0b')}</div>
+                    </div>
+                `;
+            } else {
+                const title = type === 'corrections' ? 'Factual Corrections' : 'Benign Edits';
+                const color = type === 'corrections' ? '#22c55e' : '#f59e0b';
+                container.innerHTML = renderSensitivityBars(type, title, color);
+            }
+        }
+
+        
+        function renderSensitivityBars(type, title, color) {
+          const data = sensitivityData[type];
+          let html = `<h3 style="color: ${color}; margin-bottom: 1rem; font-weight: 700;">${title}</h3>`;
+          
+          for (const [metric, change] of Object.entries(data)) {
+              const width = Math.abs(change * 100);  // bar width in %
+              
+              html += `
+                  <div class="metric-bar-container">
+                      <div class="metric-label-row">
+                          <span>${metric}</span>
+                          <span>${change > 0 ? '+' : ''}${change.toFixed(3)}</span>
+                      </div>
+                      <div class="bar-track">
+                          <div class="bar-fill" 
+                              style="width: ${width}%; background: ${color};">
+                          </div>
+                      </div>
+                  </div>
+              `;
+          }
+          
+          return html;
+      }
+
+
+
+        // Section 6: Pipeline Animation
+        let pipelineStage = -1;
+        let pipelineInterval;
+
+        function playPipelineAnimation() {
+            resetPipeline();
+            pipelineStage = -1;
+            
+            const stages = [
+                { icon: '📄', title: 'Source Document', desc: 'Original text', color: '#3b82f6' },
+                { icon: '🤖', title: 'Summary Generation', desc: 'LLM generates summary', color: '#8b5cf6' },
+                { icon: '⚙️', title: 'Metric Processing', desc: 'Apply factuality metric', color: '#06b6d4' },
+                { icon: '📊', title: 'Factuality Score', desc: 'Consistency score', color: '#22c55e' }
+            ];
+            
+            const stagesHTML = stages.map((stage, idx) => `
+                ${idx > 0 ? `<div class="pipeline-arrow inactive" id="arrow-${idx}">➜</div>` : ''}
+                <div class="pipeline-stage">
+                    <div class="stage-card inactive" id="stage-${idx}" style="background: linear-gradient(135deg, ${stage.color}, ${stage.color}dd);">
+                        <div class="stage-icon">${stage.icon}</div>
+                        <div class="stage-title">${stage.title}</div>
+                        <div class="stage-desc">${stage.desc}</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('pipeline-stages').innerHTML = stagesHTML;
+            
+            pipelineInterval = setInterval(() => {
+                pipelineStage++;
+                
+                if (pipelineStage >= 4) {
+                    clearInterval(pipelineInterval);
+                    renderVulnerabilities();
+                    return;
+                }
+                
+                const stageCard = document.getElementById(`stage-${pipelineStage}`);
+                stageCard.classList.remove('inactive');
+                stageCard.classList.add('active');
+                
+                if (pipelineStage > 0) {
+                    const arrow = document.getElementById(`arrow-${pipelineStage}`);
+                    arrow.classList.remove('inactive');
+                }
+            }, 1000);
+        }
+
+        function resetPipeline() {
+            if (pipelineInterval) clearInterval(pipelineInterval);
+            pipelineStage = -1;
+            document.getElementById('pipeline-stages').innerHTML = '';
+            document.getElementById('vulnerability-section').innerHTML = '';
+        }
+
+        function renderVulnerabilities() {
+            const vulnHTML = `
+                <h3 style="text-align: center; color: #ef4444; font-size: 1.5rem; font-weight: 700; margin: 2rem 0;">
+                    🔴 Vulnerability Analysis by Metric Type
+                </h3>
+                <div class="vuln-grid">
+                    <div class="vuln-card qa fade-in">
+                        <div class="vuln-title">QA-Based</div>
+                        <ul class="vuln-list">
+                            <li><span style="color: #ef4444;">⚠️</span> Poor error localization</li>
+                            <li><span style="color: #ef4444;">⚠️</span> Outperformed by simple baselines</li>
+                        </ul>
+                    </div>
+                    <div class="vuln-card nli fade-in" style="animation-delay: 0.2s;">
+                        <div class="vuln-title">NLI-Based</div>
+                        <ul class="vuln-list">
+                            <li><span style="color: #ef4444;">⚠️</span> Highly sensitive to benign edits</li>
+                            <li><span style="color: #ef4444;">⚠️</span> Easily gamed with assertions</li>
+                        </ul>
+                    </div>
+                    <div class="vuln-card specialized fade-in" style="animation-delay: 0.4s;">
+                        <div class="vuln-title">Specialized Models</div>
+                        <ul class="vuln-list">
+                            <li><span style="color: #ef4444;">⚠️</span> Performance drops on hard examples</li>
+                            <li><span style="color: #ef4444;">⚠️</span> Sensitive to superficial features</li>
+                            <li><span style="color: #ef4444;">⚠️</span> Can be gamed</li>
+                        </ul>
+                    </div>
+                    <div class="vuln-card llm fade-in" style="animation-delay: 0.6s;">
+                        <div class="vuln-title">LLM-Based</div>
+                        <ul class="vuln-list">
+                            <li><span style="color: #ef4444;">⚠️</span> Relies on parametric knowledge</li>
+                            <li><span style="color: #ef4444;">⚠️</span> Struggles with counterfactual refs</li>
+                            <li><span style="color: #ef4444;">⚠️</span> May ignore provided source</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('vulnerability-section').innerHTML = vulnHTML;
+        }
+
+        // Initialize
+        renderGroupedBarChart();
+        // Show all metrics immediately
+        setTimeout(() => {
+            difficultyData.forEach((_, idx) => {
+                const metricGroup = document.getElementById(`metric-${idx}`);
+                if (metricGroup) {
+                    metricGroup.classList.add('visible');
+                }
+            });
+        }, 100);
+        showSensitivity('both');
+        renderGPTBiasChart();
+        
+        // Auto-play first section on load
+        setTimeout(playCoreProblem, 500);
+    </script>
+</body>
+</html>
